@@ -11,7 +11,6 @@ from agent_did_sdk import AgentIdentity, AgentIdentityConfig, EvmAgentRegistry, 
 from agent_did_sdk.core.types import CreateAgentParams
 from agent_did_sdk.registry.evm_types import EvmAgentRegistryAdapterConfig
 
-
 ABI_PATH = Path(__file__).resolve().parent / "abi" / "AgentRegistry.abi.json"
 
 
@@ -54,6 +53,7 @@ async def main() -> None:
             name="EvmLinkedBot",
             core_model="gpt-4o-mini",
             system_prompt="You are a compliant enterprise assistant",
+            did_method="agent",
         )
     )
 

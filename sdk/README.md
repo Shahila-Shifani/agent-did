@@ -8,7 +8,9 @@ Verifiable decentralized identity for autonomous AI agents. Create, sign, resolv
 
 > **SDK en TypeScript para identidad descentralizada verificable de agentes de IA autónomos.**
 >
-> **Public Review note:** Agent-DID is pre-1.0 and the RFC is still under community review. See [../docs/DEPRECATION-POLICY.md](../docs/DEPRECATION-POLICY.md) for compatibility and breaking-change expectations during this phase.
+> **Release-candidate note:** The repository is frozen for the `1.0.0-rc.1` release train and RFC-001 is now treated as Stable text. Final `v1.0.0` publication still depends on the remaining gates in [../docs/RELEASE-1.0-CRITERIA.md](../docs/RELEASE-1.0-CRITERIA.md).
+>
+> **Moving from `0.x`?** See [MIGRATION-0.x-to-1.0.md](MIGRATION-0.x-to-1.0.md).
 
 ---
 
@@ -22,13 +24,13 @@ Agent-DID solves this with:
 - **Ed25519 cryptographic signatures** — deterministic, fast, no entropy vulnerability
 - **HTTP Bot Auth** — sign and verify HTTP requests (IETF Message Signatures)
 - **Privacy by design** — model and prompt hashes protect IP without exposure
-- **EVM registry** — on-chain anchoring and revocation on any EVM chain
+- **Optional EVM registry adapter** — available when a deployment explicitly needs the deferred on-chain profile
 - **Universal resolver** — HTTP, JSON-RPC, and IPFS with failover and caching
 
 ## Installation
 
 ```bash
-npm install @agentdid/sdk ethers
+npm install @agentdid/sdk@next ethers
 ```
 
 Requires **Node.js 18+**.
@@ -41,7 +43,7 @@ import { ethers } from 'ethers';
 
 // 1. Create an agent identity
 const wallet = new ethers.Wallet(process.env.CREATOR_PRIVATE_KEY!);
-const identity = new AgentIdentity({ signer: wallet, network: 'polygon' });
+const identity = new AgentIdentity({ signer: wallet });
 
 const { document, agentPrivateKey } = await identity.create({
   name: 'SupportBot-X',
@@ -62,6 +64,8 @@ await AgentIdentity.revokeDid(document.id);
 // All subsequent verifications will fail
 ```
 
+This quickstart validates the local signing lifecycle first. By default the SDK follows the canonical `did:webvh` path and bootstraps the local controller side for you; hosted publication of `did.jsonl` is a separate deployment concern.
+
 ## Features
 
 | Feature | API | Status |
@@ -76,15 +80,21 @@ await AgentIdentity.revokeDid(document.id);
 | Revoke DID | `AgentIdentity.revokeDid(did)` | ✅ |
 | Update document | `AgentIdentity.updateDidDocument(did, patch)` | ✅ |
 | Rotate verification keys | `AgentIdentity.rotateVerificationMethod(did)` | ✅ |
-| Document history/audit | `AgentIdentity.getDocumentHistory(did)` | ✅ |
+| Document history/audit | `AgentIdentity.getDocumentHistory(did)` + `AgentIdentity.exportDidWebvhHistory(did)` + `AgentIdentity.importDidWebvhHistory(log)` + `AgentIdentity.saveDidWebvhHistoryToFile(did, path)` + `AgentIdentity.loadDidWebvhHistoryFromFile(path)` + `AgentIdentity.persistDidWebvhHistoryToSource(did, ref, source)` + `AgentIdentity.restoreDidWebvhHistoryFromSource(ref, source)` | ✅ |
+| Filesystem storage adapter | `FilesystemDIDDocumentSource` | ✅ |
+| Remote HTTP storage adapter | `HttpDIDDocumentSource` (`storeByReference`, `getDidLogByReference`, `storeDidLogByReference`) | ✅ |
+| Authenticated HTTP gateway adapter | `BearerTokenHttpDIDDocumentSource` | ✅ |
+| Presigned/object-storage adapter | `PresignedHttpDIDDocumentSource` | ✅ |
+| S3-compatible object-store adapter | `S3CompatibleDIDDocumentSource` | ✅ |
+| AWS SigV4 S3 adapter | `AwsSigV4S3DIDDocumentSource` | ✅ |
 | EVM registry adapter | `EvmAgentRegistry` + `EthersAgentRegistryContractClient` | ✅ |
 | Universal resolver (HTTP/RPC/IPFS) | `UniversalResolverClient` | ✅ |
 
 By default, `verifySignature` and HTTP signature verification require the signing key to be listed under `assertionMethod` in the DID document. Passing a key that exists only under another relationship, including `keyAgreement`, raises `IdentityCompositionError` with reason `key_purpose_violation`.
 
-## EVM Registry Integration
+## Optional EVM Registry Integration
 
-Connect to a real on-chain `AgentRegistry` contract:
+If a deployment explicitly needs the deferred EVM profile, connect the SDK to a real on-chain `AgentRegistry` contract:
 
 ```ts
 import { EthersAgentRegistryContractClient, EvmAgentRegistry } from '@agentdid/sdk';
@@ -111,7 +121,7 @@ import { AgentIdentity } from '@agentdid/sdk';
 
 // HTTP resolver with IPFS gateway failover
 AgentIdentity.useProductionResolverFromHttp({
-  registry: evmRegistry,
+  registry: evmRegistry, // optional when using the EVM compatibility profile
   cacheTtlMs: 60_000,
   ipfsGateways: ['https://gateway.pinata.cloud', 'https://ipfs.io'],
   onResolutionEvent: (event) => console.log('Resolution:', event)
@@ -153,7 +163,7 @@ After key rotation, old keys are marked `deactivated` (ISO timestamp) but kept i
 
 ```ts
 const valid = await AgentIdentity.verifyHistoricalSignature(
-  did, payload, signatureHex, 'did:agent:polygon:0x...#key-1'
+  did, payload, signatureHex, `${did}#key-1`
 );
 ```
 
@@ -173,8 +183,37 @@ This SDK implements [RFC-001: Agent-DID Specification](https://github.com/edison
 ## Current Limitations
 
 - Default resolver is in-memory (not persistent) — use production resolver for real deployments
-- EVM adapter assumes contract exposes `registerAgent`, `revokeAgent`, `getAgentRecord`, `isRevoked`
+- Optional EVM adapter assumes contract exposes `registerAgent`, `revokeAgent`, `getAgentRecord`, `isRevoked`
 - EVM timestamps consumed as Unix-string, SDK normalizes to ISO-8601
+
+## Maintainer Release to npm
+
+The repository includes `.github/workflows/publish-sdk.yml` for npm Trusted Publishing with provenance.
+
+Before the first release, create the `@agentdid/sdk` package in npm and register GitHub Trusted Publishing for:
+
+- repository: `edisonduran/agent-did`
+- workflow file: `.github/workflows/publish-sdk.yml`
+- workflow trigger: tag `sdk-vX.Y.Z` for npm, or `workflow_dispatch` from `main`
+
+Release preparation:
+
+```bash
+cd sdk
+npm ci
+npm run api:check
+npm run api:signature:check
+npm test -- --coverage --runInBand
+npm run build
+npm pack --dry-run
+```
+
+Release flow:
+
+- bump `version` in `package.json`
+- publish to npm by pushing a tag named `sdk-vX.Y.Z`
+- alternatively, run the workflow manually from `main`
+- verify the published npm release shows GitHub Actions provenance for `.github/workflows/publish-sdk.yml`
 
 ## Contributing
 

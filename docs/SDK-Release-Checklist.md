@@ -6,6 +6,8 @@ Provide a single repository-level release checklist for the TypeScript SDK in `s
 
 Documentation status and canonical-source rules are defined in `docs/Documentation-Governance.md`.
 
+For the coordinated core `1.0.0` prerelease/stable train, the canonical publication entrypoint is `.github/workflows/publish-release-train.yml` driven by a monorepo tag such as `v1.0.0-rc.1`. The package-specific workflows `.github/workflows/publish-sdk.yml` and `.github/workflows/publish-python-sdk.yml` remain valid for SDK-only release paths.
+
 This checklist is intended for:
 
 1. Release preparation.
@@ -52,11 +54,14 @@ Mark each item before cutting or approving an SDK-affecting release.
 
 Run from the repository root unless noted otherwise.
 
-- [ ] `npm --prefix sdk test`
+- [ ] `npm --prefix sdk test -- --coverage --runInBand`
 - [ ] `npm --prefix sdk run build`
+- [ ] `cd sdk && npm pack --dry-run`
 - [ ] If TypeScript public API changed, `sdk/README.md` is updated.
 - [ ] If the change affects shared behavior, parity impact on Python was reviewed.
 - [ ] `sdk/package.json` versioning and publish metadata are correct for the release.
+- [ ] npm Trusted Publishing is configured for `.github/workflows/publish-sdk.yml`.
+- [ ] Published npm metadata is expected to show GitHub Actions provenance for `.github/workflows/publish-sdk.yml`.
 
 ---
 
@@ -89,6 +94,7 @@ Checklist:
 - [ ] If Python public API changed, `sdk-python/README.md` is updated.
 - [ ] `sdk-python/pyproject.toml` metadata and version are correct for the release.
 - [ ] PyPI Trusted Publishing is configured for `.github/workflows/publish-python-sdk.yml` in PyPI and, if used, TestPyPI.
+- [ ] Published PyPI metadata is expected to show the GitHub Actions Trusted Publisher for `.github/workflows/publish-python-sdk.yml`.
 
 ---
 

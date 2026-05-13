@@ -60,13 +60,18 @@ jobs:
         working-directory: sdk-python
         run: python scripts/public_api_snapshot.py --check
 
+      - name: Check Python public API signature snapshot
+        if: matrix.python-version == '3.12'
+        working-directory: sdk-python
+        run: python scripts/public_api_signature_snapshot.py --check
+
       - name: Install contract dependencies
         if: matrix.python-version == '3.12'
         run: npm --prefix contracts ci
 
       - name: Lint with ruff
         working-directory: sdk-python
-        run: ruff check src/ tests/ scripts/
+        run: ruff check src/ tests/ scripts/ examples/
 
       - name: Type check with mypy
         working-directory: sdk-python

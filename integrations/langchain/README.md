@@ -10,7 +10,7 @@ La matriz de parity entre ambas integraciones vive en `../../docs/F1-03-LangChai
 
 - `langchain` `^1.2.35`
 - `@langchain/core` `^1.1.34`
-- `@agentdid/sdk` `^0.1.0`
+- `@agentdid/sdk` `1.0.0-rc.1`
 - Node.js 20+
 
 ## Estado
@@ -23,7 +23,7 @@ La matriz de parity entre ambas integraciones vive en `../../docs/F1-03-LangChai
 ## Instalacion
 
 ```bash
-npm install @agentdid/sdk langchain @langchain/core zod
+npm install @agentdid/sdk@next langchain @langchain/core zod
 ```
 
 Para habilitar el adaptador opcional de LangSmith:
@@ -35,7 +35,7 @@ npm install langsmith
 Si publicas este paquete por separado:
 
 ```bash
-npm install @agentdid/langchain
+npm install @agentdid/langchain@next
 ```
 
 ## Uso rapido
@@ -47,7 +47,7 @@ import { AgentIdentity } from "@agentdid/sdk";
 import { createAgentDidIntegration } from "@agentdid/langchain";
 
 const signer = new ethers.Wallet(process.env.CREATOR_PRIVATE_KEY!);
-const identity = new AgentIdentity({ signer, network: "polygon" });
+const identity = new AgentIdentity({ signer });
 
 const runtimeIdentity = await identity.create({
   name: "research_assistant",
@@ -88,6 +88,8 @@ const result = await agent.invoke({
 
 console.log(result.messages.at(-1)?.content);
 ```
+
+En este flujo el SDK usa el path web-native canonico y bootstrappea el controller local para el ejemplo. La publicacion hospedada del `did:webvh` y su historia verificable es el siguiente paso de despliegue, no un requisito para probar la integracion local.
 
 ## Que agrega la integracion
 

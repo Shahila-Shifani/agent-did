@@ -2,7 +2,7 @@
 
 Thank you for considering contributing to Agent-DID! We are building the foundational identity layer for the AI economy, and every contribution matters.
 
-> **Project status:** Agent-DID is an open, pre-1.0 project being built in public. The TypeScript SDK is published (`@agentdid/sdk`), the Python SDK is implemented with dedicated CI in `sdk-python/`, RFC-001 is fully conformant (11/11 MUST + 5/5 SHOULD), and the EVM smart contract is functional. See the [Roadmap](#roadmap--where-to-contribute) below for what's next.
+> **Project status:** Agent-DID is an open, pre-1.0 project being built in public. The TypeScript SDK is published (`@agentdid/sdk`), the Python SDK is implemented with dedicated CI in `sdk-python/`, RFC-001 is fully conformant (11/11 MUST + 5/5 SHOULD), and the core release path now follows the canonical `did:webvh` deployment story. EVM/on-chain profile material remains in the repo but is outside the core 1.0 gate. See the [Roadmap](#roadmap--where-to-contribute) below for what's next.
 
 ---
 
@@ -25,7 +25,7 @@ During the current Public Review window, maintainers are explicitly seeking feed
 - The semantics and granularity of `agentMetadata.capabilities`, including whether the field should stay purely declarative or grow a stronger authorization profile.
 - How `coreModelHash` and `systemPromptHash` should represent fine-tuned models, prompt templates, composite agents, and runtime composition without losing interoperability.
 - Document evolution and revision semantics, including where to draw the line between update, key rotation, evolution, and delegated runtime identity.
-- DID method guidance beyond the current EVM, `did:wba`, and `did:web` emphasis, including portability expectations for additional DID methods.
+- Deployment-profile guidance around the canonical `did:webvh` path and compatibility expectations for other DID methods.
 - Anti-replay guidance for streaming, callbacks, and multi-hop agent delegation, especially nonce-cache behavior and verifier responsibilities beyond the current SDK defaults.
 - Resolver trust, persistence, and availability expectations for production deployments beyond the current in-memory and drill-oriented baseline.
 - Verifiable Credential profile expectations for `complianceCertifications`, including issuer trust and interoperability constraints.
@@ -34,13 +34,13 @@ The following surfaces are treated as comparatively stable unless a correctness 
 
 - W3C DID / VC foundations and the core DID document structure.
 - Ed25519 as the default signing algorithm.
-- Minimal on-chain anchoring plus off-chain document reference and revocation state.
+- The canonical `did:webvh` deployment path, including controller-chain composition and hosted document/history semantics.
 - The lifecycle primitives: create, update, rotate, revoke, resolve, verify.
 
 ### 2. Contribute Code (Pull Requests)
 
 1. Fork the repository.
-2. Create a branch from `master` (`git checkout -b feature/your-feature`).
+2. Create a branch from `main` (`git checkout -b feature/your-feature`).
 3. Write code + tests. Ensure the relevant stack-native test workflow passes in the affected package.
 4. Run conformance: `npm run conformance:rfc001` from the project root.
 5. If you touch the LangChain integration, also run `npm run test:langchain` from the project root.
@@ -49,7 +49,7 @@ The following surfaces are treated as comparatively stable unless a correctness 
 8. If your change affects delivered status, roadmap closure, CI coverage, maturity claims, or integration scope, update all impacted live documents in the same PR.
 9. Use the documentation checklist in this file when a PR changes project status, roadmap items, integration maturity, or training content.
 10. Commit with a descriptive message following [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat(sdk): add batch DID resolution`).
-11. Open a Pull Request against `master`.
+11. Open a Pull Request against `main`.
 
 #### Assigned Issues and PR Scope
 
@@ -74,9 +74,9 @@ Documentation update checklist for status-changing work:
 
 If you want to contribute quickly, these are the most valuable open areas right now:
 
-- **F1-04** Submit RFC-001 to DIF and prepare supporting review material.
-- **F2-03** Build a production resolver backend beyond the current in-memory default.
-- **F2-06** Deploy and document a public testnet environment.
+- **v1.0 release hardening**: 30-day green evidence on `main`, migration guides, compatibility matrix, release-critical CI cleanup, and clean install smokes.
+- **F2-03** Harden production resolver/operator profiles beyond the shipped source-adapter baseline.
+- **F2-06** is not part of core 1.0. EVM/on-chain profile work is deferred and should only be reopened if maintainers identify a concrete need after the web-native release path is stable.
 - **F2-07** Turn the theoretical paper into a formal whitepaper package.
 - **F2-08** Add Azure AI Agent Service integration with the same governance discipline used by the shipped integrations.
 
@@ -101,7 +101,7 @@ The project follows a 3-phase roadmap. Items marked with **🔓 Open** are activ
 | F1-01 | Publish SDK to npm as `@agentdid/sdk` | Technical | ✅ Done |
 | F1-02 | Translate README and key docs to English | Documentation | ✅ Done |
 | F1-03 | **LangChain integration** — inject Agent-DID identity into agent chains | Integration | ✅ Done |
-| F1-04 | **Submit RFC-001 to DIF** (Decentralized Identity Foundation) | Standards | 🔓 Open |
+| F1-04 | **Prepare optional DIF / `did:webvh` companion-note material** | Standards | Post-1.0 / optional |
 | F1-05 | **Automated smart contract audit** (Slither/Mythril) | Security | ✅ Done |
 | F1-06 | **CI/CD pipeline** with GitHub Actions (build + test + conformance per PR) | DevOps | ✅ Done |
 
@@ -121,10 +121,10 @@ The implemented LangChain package lives in [integrations/langchain/README.md](in
 |---|---|---|---|
 | F2-01 | **Python SDK** with feature parity | Technical | ✅ Done |
 | F2-02 | **Google A2A proof-of-concept** — Agent-DID as identity layer for A2A | Integration | ✅ Done |
-| F2-03 | **Production resolver** with persistent backend (IPFS/Arweave + HTTP) | Technical | 🔓 Open |
+| F2-03 | **Production resolver** hardening beyond shipped source adapters | Technical | Post-core hardening |
 | F2-04 | **Semantic Kernel integration** | Integration | ✅ Done |
 | F2-05 | **CrewAI integration** | Integration | ✅ Done |
-| F2-06 | **Public testnet deployment** with documentation | Infrastructure | 🔓 Open |
+| F2-06 | **EVM/on-chain profile evaluation** | Infrastructure | Deferred — revisit only if a concrete need appears |
 | F2-07 | Publish theoretical paper as formal whitepaper | Marketing | 🔓 Open |
 | F2-08 | **Azure AI Agent Service integration** | Integration | 🔓 Open |
 | F2-09 | **Microsoft Agent Framework integration** | Integration | ✅ Done |
@@ -133,7 +133,7 @@ The implemented LangChain package lives in [integrations/langchain/README.md](in
 
 | # | Item | Type | Status |
 |---|---|---|---|
-| F3-01 | Propose `did:agent` method to W3C DID WG | Standards | Planned |
+| F3-01 | Explore Agent-DID as a DIF / `did:webvh` companion note | Standards | Planned post-1.0 |
 | F3-02 | Conformance certification as a service | Business | Planned |
 | F3-03 | ZKP for capability verification | Technical | Planned |
 | F3-04 | Formal contract audit for mainnet deployment | Security | Planned |
